@@ -1,0 +1,11 @@
+
+libbitwiddle.files
+libbitwiddle.includes
+libbitwiddle.creator
+
+Makefile
+
+libbittwiddle/libbittwiddle.h
+test/test.cc
+
+README

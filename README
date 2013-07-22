@@ -1,0 +1,43 @@
+  What is libbittwiddle
+  =====================
+
+Libbittwiddle is a collection of bit manipulation routines.
+
+The included routines are as follows:
+
+ * popcnt
+
+    Computes set bits. Uses a compiler intrinsic if available.
+    Results in 12 arithmetic operations.
+
+ * clz
+
+    Computes leading zeros. Uses a compiler intrinsic if available.
+    Results in 23-25 arithmetic operations.
+
+ * ctz
+
+    Computes trailing zeros. Uses a compiler intrinsic if available.
+    Results in 16 arithmetic operations.
+
+ * check_has_byte_eq
+
+    Checks whether a number has a byte with a value equal to a compile-time
+    value x. Results in 5 arithmetic operations.
+
+ * check_has_byte_lt
+
+    Checks whether a number has a byte with a value less than a compile-time
+    value x. Results in 4-5 arithmetic operations.
+
+ * check_has_byte_gt
+
+    Checks whether a number has a byte with a value greater than a compile-time
+    value x. Results in 3-4 arithmetic operations.
+
+ * check_has_byte_between
+
+    Checks whether a number has a byte with a value between compile-time values
+    x and y. Results in 7 arithmetic operations.
+
+All routines are branch-less. A C++11-aware compiler is required.
