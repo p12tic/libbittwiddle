@@ -43,8 +43,8 @@ check: test/test
 test/test: test/test.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
-test/test.o: test/test.cc
-	$(CXX) $^ -c $(CXXFLAGS) -o $@
+test/test.o: test/test.cc libbittwiddle/libbittwiddle.h
+	$(CXX) test/test.cc -c $(CXXFLAGS) -o $@
 
 dist: clean
 	mkdir -p "libbittwiddle-$(VERSION)"
