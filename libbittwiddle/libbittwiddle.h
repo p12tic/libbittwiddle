@@ -128,9 +128,53 @@ bool check_has_byte_eq_impl(T x, std::uint8_t a)
     return check_has_zero_impl(x ^ b_a);
 }
 
-/* This is unoptimized implementation. It unfortunately contains a branch, which
-    results in poor performance. The implementation below is optimized to
-    use conditional moves instead of a branch.
+#ifdef LIBBITTWIDDLE_BRANCHLESS_CHECK_HAS_LTGT
+/* This implementation is useful if @a a is effectively random -- i.e. branch
+    predictor can't predict whether @a a is less or greater than 127 or 128. If
+    this is not the case, use the implementation with branches. For values
+    known at compile-time, both implementations are equivalent
+*/
+
+template<class T>
+bool check_has_byte_lt_impl(T x, std::uint8_t a)
+{
+    bool gt127 = (a >= 128);
+    T mask = gt127 ? ~T(0) : 0;
+
+    x = x ^ mask;
+    a = (255-a & mask) | (a & ~mask);
+
+    T b_0x80 = broadcast<T>(0x80);
+    T b_127 = broadcast<T>(127);
+    T b_a = broadcast<T>(a);
+
+    b_127 &= mask;
+    T x_or = x & mask;
+    T x_and = ~x | mask;
+
+    return (((x + b_127 - b_a) & x_and) | x_or) & b_0x80;
+}
+
+template<class T>
+bool check_has_byte_gt_impl(T x, std::uint8_t a)
+{
+    bool lt128 = (a >= 127);
+    T mask = lt128 ? ~T(0) : 0;
+
+    x = x ^ mask;
+    a = (255-a & mask) | (a & ~mask);
+
+    T b_0x80 = broadcast<T>(0x80);
+    T b_127 = broadcast<T>(127);
+    T b_a = broadcast<T>(a);
+
+    b_127 &= ~mask;
+    T x_or = x & ~mask;
+    T x_and = ~x | ~mask;
+
+    return (((x + b_127 - b_a) & x_and) | x_or) & b_0x80;
+}
+#else
 
 template<class T>
 bool check_has_byte_lt_impl128(T x, std::uint8_t a)
@@ -171,46 +215,7 @@ bool check_has_byte_gt_impl(T x, std::uint8_t a)
         return check_has_byte_gt_impl127(x, a);
     }
 }
-*/
-template<class T>
-bool check_has_byte_lt_impl(T x, std::uint8_t a)
-{
-    bool gt127 = (a >= 128);
-    T mask = gt127 ? ~T(0) : 0;
-
-    x = x ^ mask;
-    a = (255-a & mask) | (a & ~mask);
-
-    T b_0x80 = broadcast<T>(0x80);
-    T b_127 = broadcast<T>(127);
-    T b_a = broadcast<T>(a);
-
-    b_127 &= mask;
-    T x_or = x & mask;
-    T x_and = ~x | mask;
-
-    return (((x + b_127 - b_a) & x_and) | x_or) & b_0x80;
-}
-
-template<class T>
-bool check_has_byte_gt_impl(T x, std::uint8_t a)
-{
-    bool lt128 = (a >= 127);
-    T mask = lt128 ? ~T(0) : 0;
-
-    x = x ^ mask;
-    a = (255-a & mask) | (a & ~mask);
-
-    T b_0x80 = broadcast<T>(0x80);
-    T b_127 = broadcast<T>(127);
-    T b_a = broadcast<T>(a);
-
-    b_127 &= ~mask;
-    T x_or = x & ~mask;
-    T x_and = ~x | ~mask;
-
-    return (((x + b_127 - b_a) & x_and) | x_or) & b_0x80;
-}
+#endif
 
 template<class T>
 bool check_has_byte_between_impl(T x, std::uint8_t a, std::uint8_t b)

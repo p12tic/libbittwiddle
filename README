@@ -8,38 +8,55 @@ The included routines are as follows:
  * popcnt
 
     Computes set bits. Uses a compiler intrinsic if available.
-    Results in 12 arithmetic operations.
+    Results in 12 arithmetic operations, no branches.
 
  * clz
 
     Computes leading zeros. Uses a compiler intrinsic if available.
-    Results in 23-25 arithmetic operations.
+    Results in 23-25 arithmetic operations, no branches.
 
  * ctz
 
     Computes trailing zeros. Uses a compiler intrinsic if available.
-    Results in 16 arithmetic operations.
+    Results in 16 arithmetic operations, no branches.
 
  * check_has_byte_eq
 
     Checks whether a number has a byte with a value equal to a value x.
-    Results in 5 arithmetic operations.
+    Results in 5 arithmetic operations, no branches.
 
  * check_has_byte_lt
 
     Checks whether a number has a byte with a value less than a value x.
-    Results in 4-5 arithmetic operations if the value x is known at
-    compile-time. Otherwise, results in 14-15 arithmetic operations.
+    It's possible to select from two implementations with the following
+    performance characteristics:
+     4-5 arithmetic operations and a branch (default).
+     14-15 arithmetic operations and no branches.
+
+    If the value x is known at compile-time, both implementations are equivalent
+    and result in 4-5 arithmetic operations and no branches.
+
+    The branchless implementation can be selected by defining
+    LIBBITTWIDDLE_BRANCHLESS_CHECK_HAS_LTGT before including libbittwiddle.h
 
  * check_has_byte_gt
 
     Checks whether a number has a byte with a value greater than a value x.
-    Results in 3-4 arithmetic operations if the value x is known at
-    compile-time. Otherwise, results in 14-15 arithmetic operations.
+    It's possible to select from two implementations with the following
+    performance characteristics:
+     3-4 arithmetic operations and a branch (default).
+     14-15 arithmetic operations and no branches.
+
+    If the value x is known at compile-time, both implementations are equivalent
+    and result in 3-4 arithmetic operations and no branches.
+
+    The branchless implementation can be selected by defining
+    LIBBITTWIDDLE_BRANCHLESS_CHECK_HAS_LTGT before including libbittwiddle.h
 
  * check_has_byte_between
 
     Checks whether a number has a byte with a value between compile-time values
-    x and y. Results in 7 arithmetic operations.
+    x and y. Results in 7 arithmetic operations and no branches (the range of
+    x and y is restricted).
 
-All routines are branchless. A C++11-aware compiler is required.
+A C++11-aware compiler is required.
