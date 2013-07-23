@@ -28,16 +28,18 @@ The included routines are as follows:
  * check_has_byte_lt
 
     Checks whether a number has a byte with a value less than a value x.
-    Results in 4-5 arithmetic operations and a branch.
+    Results in 4-5 arithmetic operations if the value x is known at
+    compile-time. Otherwise, results in 14-15 arithmetic operations.
 
  * check_has_byte_gt
 
     Checks whether a number has a byte with a value greater than a value x.
-    Results in 3-4 arithmetic operations and a branch.
+    Results in 3-4 arithmetic operations if the value x is known at
+    compile-time. Otherwise, results in 14-15 arithmetic operations.
 
  * check_has_byte_between
 
     Checks whether a number has a byte with a value between compile-time values
     x and y. Results in 7 arithmetic operations.
 
-A C++11-aware compiler is required.
+All routines are branchless. A C++11-aware compiler is required.
