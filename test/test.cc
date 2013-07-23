@@ -82,7 +82,7 @@ void test_exhaustive()
 
                         t = combine_test_bg(t, bg, pos);
 
-                        bool ok = (check_has_byte_eq<Ch>(t) == (Ch == ch));
+                        bool ok = (check_has_byte_eq(t, Ch) == (Ch == ch));
                         BOOST_CHECK(ok);
                         if (!ok) {
                             print_test(std::cout, "has_eq", Ch, ch, t);
@@ -117,7 +117,7 @@ void test_exhaustive()
                         t = build_test_block(ch, ms_bits2, ls_bits2);
                         t = combine_test_bg(t, bg, pos);
 
-                        bool ok = (check_has_byte_lt<Ch>(t) == (ch < Ch));
+                        bool ok = (check_has_byte_lt(t, Ch) == (ch < Ch));
                         BOOST_CHECK(ok);
                         if (!ok) {
                             print_test(std::cout, "has_lt", Ch, ch, t);
@@ -149,7 +149,7 @@ void test_exhaustive()
                         t = build_test_block(ch, ms_bits2, ls_bits2);
                         t = combine_test_bg(t, bg, pos);
 
-                        bool ok = (check_has_byte_gt<Ch>(t) == (ch > Ch));
+                        bool ok = (check_has_byte_gt(t, Ch) == (ch > Ch));
                         BOOST_CHECK(ok);
                         if (!ok) {
                             print_test(std::cout, "has_gt", Ch, ch, t);

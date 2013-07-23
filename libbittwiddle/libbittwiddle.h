@@ -15,20 +15,20 @@ namespace bittwiddle {
 namespace internal {
 
 // Broadscasts the byte to all bytes of the value
-template<std::uint8_t C, class T>
-constexpr T broadcast()
+template<class T>
+constexpr T broadcast(std::uint8_t x)
 {
     // equivalent to 0x0101..01 * C
-    return ((~T(0))/0xff) * C;
+    return ((~T(0))/0xff) * x;
 }
 
 #if defined(__GNUC__) && !defined(LIBBITTWIDDLE_TESTING)
-unsigned popcnt_impl(std::uint32_t x)
+inline unsigned popcnt_impl(std::uint32_t x)
 {
     return __builtin_popcount(x);
 }
 
-unsigned popcnt_impl(std::uint64_t x)
+inline unsigned popcnt_impl(std::uint64_t x)
 {
     return __builtin_popcountll(x);
 }
@@ -36,10 +36,10 @@ unsigned popcnt_impl(std::uint64_t x)
 template<class T>
 unsigned popcnt_impl(T x)
 {
-    T b_0x01 = broadcast<0x01,T>();
-    T b_0x55 = broadcast<0x55,T>();
-    T b_0x33 = broadcast<0x33,T>();
-    T b_0x0f = broadcast<0x0f,T>();
+    T b_0x01 = broadcast<T>(0x01);
+    T b_0x55 = broadcast<T>(0x55);
+    T b_0x33 = broadcast<T>(0x33);
+    T b_0x0f = broadcast<T>(0x0f);
 
     // sum adjacent bits
     x -= (x >> 1) & b_0x55;
@@ -54,18 +54,18 @@ unsigned popcnt_impl(T x)
 #endif
 
 #if defined(__GNUC__) && !defined(LIBBITTWIDDLE_TESTING)
-unsigned clz_impl(std::uint32_t x)
+inline unsigned clz_impl(std::uint32_t x)
 {
     return __builtin_clz(x);
 }
 
-unsigned clz_impl(std::uint64_t x)
+inline unsigned clz_impl(std::uint64_t x)
 {
     return __builtin_clzll(x);
 }
 #else
 // http://aggregate.org/MAGIC/#Leading%20Zero%20Count
-unsigned clz_impl(std::uint32_t x)
+inline unsigned clz_impl(std::uint32_t x)
 {
     x |= (x >> 1);
     x |= (x >> 2);
@@ -75,7 +75,7 @@ unsigned clz_impl(std::uint32_t x)
     return(32 - popcnt_impl(x));
 }
 
-unsigned clz_impl(std::uint64_t x)
+inline unsigned clz_impl(std::uint64_t x)
 {
     x |= (x >> 1);
     x |= (x >> 2);
@@ -88,12 +88,12 @@ unsigned clz_impl(std::uint64_t x)
 #endif
 
 #if defined(__GNUC__) && !defined(LIBBITTWIDDLE_TESTING)
-unsigned ctz_impl(std::uint32_t x)
+inline unsigned ctz_impl(std::uint32_t x)
 {
     return __builtin_ctz(x);
 }
 
-unsigned ctz_impl(std::uint64_t x)
+inline unsigned ctz_impl(std::uint64_t x)
 {
     return __builtin_ctzll(x);
 }
@@ -115,73 +115,66 @@ bool check_is_power_2(T x)
 template<class T>
 bool check_has_zero_impl(T x)
 {
-    T b_1 = broadcast<1,T>();
-    T b_0x80 = broadcast<0x80,T>();
+    T b_1 = broadcast<T>(1);
+    T b_0x80 = broadcast<T>(0x80);
 
     return (x - b_1) & ~x & b_0x80;
 }
 
-template<std::uint8_t A, class T>
-bool check_has_byte_eq_impl(T x)
+template<class T>
+bool check_has_byte_eq_impl(T x, std::uint8_t a)
 {
-    T b_a = broadcast<A,T>();
+    T b_a = broadcast<T>(a);
     return check_has_zero_impl(x ^ b_a);
 }
 
-template<std::uint8_t A, class T>
-bool check_has_byte_lt_impl128(T x)
+template<class T>
+bool check_has_byte_lt_impl128(T x, std::uint8_t a)
 {
-    //static_assert(A <= 128, "A out of range");
-    T b_a = broadcast<A,T>();
-    T b_128 = broadcast<128,T>();
+    T b_a = broadcast<T>(a);
+    T b_0x80 = broadcast<T>(0x80);
 
-    return (x - b_a) & ~x & b_128;
+    return (x - b_a) & ~x & b_0x80;
 }
 
-template<std::uint8_t A, class T>
-bool check_has_byte_gt_impl127(T x)
+template<class T>
+bool check_has_byte_gt_impl127(T x, std::uint8_t a)
 {
-    //static_assert(A <= 127, "A out of range");
-    T b_127ma = broadcast<127-A,T>();
-    T b_128 = broadcast<128,T>();
+    T b_127ma = broadcast<T>(127-a);
+    T b_0x80 = broadcast<T>(0x80);
 
-    return ((x + b_127ma) | x ) & b_128;
+    return ((x + b_127ma) | x ) & b_0x80;
 }
 
-template<std::uint8_t A, class T>
-bool check_has_byte_lt_impl(T x)
+template<class T>
+bool check_has_byte_lt_impl(T x, std::uint8_t a)
 {
-    //static_assert(A <= 128, "A out of range");
-    if (A >= 128) {
-        x = x ^ ~T(0);
-        return check_has_byte_gt_impl127<255-A>(x);
+    if (a >= 128) {
+        x = ~x;
+        return check_has_byte_gt_impl127(x, 255-a);
     } else {
-        return check_has_byte_lt_impl128<A>(x);
+        return check_has_byte_lt_impl128(x, a);
     }
 }
 
-template<std::uint8_t A, class T>
-bool check_has_byte_gt_impl(T x)
+template<class T>
+bool check_has_byte_gt_impl(T x, std::uint8_t a)
 {
-    //static_assert(A <= 128, "A out of range");
-    if (A >= 127) {
-        x = x ^ ~T(0);
-        return check_has_byte_lt_impl128<255-A>(x);
+    if (a >= 127) {
+        x = ~x;
+        return check_has_byte_lt_impl128(x, 255-a);
     } else {
-        return check_has_byte_gt_impl127<A>(x);
+        return check_has_byte_gt_impl127(x, a);
     }
 }
 
-template<std::uint8_t A, std::uint8_t B, class T>
-bool check_has_byte_between_impl(T x)
+template<class T>
+bool check_has_byte_between_impl(T x, std::uint8_t a, std::uint8_t b)
 {
-    static_assert(0 <= A && A <= 127, "A out of range");
-    static_assert(0 <= B && B <= 128, "B out of range");
-    static_assert(A < B, "A must be less than B");
-    T b_127pa = broadcast<127+A,T>();
-    T b_127mb = broadcast<127-B,T>();
-    T b_127 = broadcast<127,T>();
-    T b_128 = broadcast<128,T>();
+    T b_127pa = broadcast<T>(127+a);
+    T b_127mb = broadcast<T>(127-b);
+    T b_127 = broadcast<T>(127);
+    T b_128 = broadcast<T>(128);
 
     T res;
     res = b_127pa - b_127;
@@ -254,69 +247,62 @@ inline unsigned ctz(std::int64_t x)
 /// @}
 
 /// @{
-/** Returns @c true if word has a byte equal to A.
+/** Returns @c true if word has a byte equal to a.
 */
-template<std::uint8_t A>
-bool check_has_byte_eq(std::uint32_t word)
+inline bool check_has_byte_eq(std::uint32_t word, std::uint8_t a)
 {
-    return internal::check_has_byte_eq_impl<A>(word);
+    return internal::check_has_byte_eq_impl(word, a);
 }
-template<std::uint8_t A>
-bool check_has_byte_eq(std::uint64_t word)
+inline bool check_has_byte_eq(std::uint64_t word, std::uint8_t a)
 {
-    return internal::check_has_byte_eq_impl<A>(word);
+    return internal::check_has_byte_eq_impl(word, a);
 }
 /// @}
 
 /// @{
-/** Returns @c true if word has a byte in the range [0, A).
+/** Returns @c true if word has a byte in the range [0, a).
 */
-template<std::uint8_t A>
-bool check_has_byte_lt(std::uint32_t word)
+inline bool check_has_byte_lt(std::uint32_t word, std::uint8_t a)
 {
-    return internal::check_has_byte_lt_impl<A>(word);
+    return internal::check_has_byte_lt_impl(word, a);
 }
-template<std::uint8_t A>
-bool check_has_byte_lt(std::uint64_t word)
+inline bool check_has_byte_lt(std::uint64_t word, std::uint8_t a)
 {
-    return internal::check_has_byte_lt_impl<A>(word);
+    return internal::check_has_byte_lt_impl(word, a);
 }
 /// @}
 
 /// @{
-/** Returns @c true if word has a byte in the range (A, 255].
+/** Returns @c true if word has a byte in the range (a, 255].
 */
-template<std::uint8_t A>
-bool check_has_byte_gt(std::uint32_t word)
+inline bool check_has_byte_gt(std::uint32_t word, std::uint8_t a)
 {
-    return internal::check_has_byte_gt_impl<A>(word);
+    return internal::check_has_byte_gt_impl(word, a);
 }
-template<std::uint8_t A>
-bool check_has_byte_gt(std::uint64_t word)
+inline bool check_has_byte_gt(std::uint64_t word, std::uint8_t a)
 {
-    return internal::check_has_byte_gt_impl<A>(word);
+    return internal::check_has_byte_gt_impl(word, a);
 }
 /// @}
 
 /// @{
-/** Returns @c true if word has a byte in the range [M, N).
+/** Returns @c true if word has a byte in the range [a, b).
     The following must hold true:
 
-    0 <= A <= 127
-    0 <= B <= 128
-    A < B
+    0 <= a <= 127
+    0 <= b <= 128
+    a < b
 
     FIXME: not tested
 */
-template<std::uint8_t A, std::uint8_t B>
-bool check_has_byte_between(std::uint32_t word)
+inline bool check_has_byte_between(std::uint32_t word, std::uint8_t a, std::uint8_t b)
 {
-    return internal::check_has_byte_between_impl<A,B>(word);
+    return internal::check_has_byte_between_impl(word, a, b);
 }
-template<std::uint8_t A, std::uint8_t B>
-bool check_has_byte_between(std::uint64_t word)
+
+inline bool check_has_byte_between(std::uint64_t word, std::uint8_t a, std::uint8_t b)
 {
-    return internal::check_has_byte_between_impl<A,B>(word);
+    return internal::check_has_byte_between_impl(word, a, b);
 }
 /// @}
 
